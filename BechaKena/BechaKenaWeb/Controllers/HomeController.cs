@@ -1,4 +1,4 @@
-﻿using BechaKenaWeb.Models;
+﻿using BechaKena.Model.Models;
 using Microsoft.AspNetCore.Mvc;
 using System.Diagnostics;
 

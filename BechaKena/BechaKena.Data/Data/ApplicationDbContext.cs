@@ -1,7 +1,7 @@
-﻿using BechaKenaWeb.Models;
+﻿using BechaKena.Model.Models;
 using Microsoft.EntityFrameworkCore;
 
-namespace BechaKenaWeb.Data
+namespace BechaKena.Data.Data
 {
     public class ApplicationDbContext : DbContext
     {

@@ -1,7 +1,6 @@
-﻿using BechaKenaWeb.Data;
-using BechaKenaWeb.Models;
+﻿using BechaKena.Data.Data;
+using BechaKena.Model.Models;
 using Microsoft.AspNetCore.Mvc;
-using System.Security.Cryptography;
 
 namespace BechaKena.Controllers
 {

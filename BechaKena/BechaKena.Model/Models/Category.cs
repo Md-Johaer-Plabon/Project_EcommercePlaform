@@ -1,7 +1,7 @@
 ﻿using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 
-namespace BechaKenaWeb.Models
+namespace BechaKena.Model.Models
 {
     public class Category
     {

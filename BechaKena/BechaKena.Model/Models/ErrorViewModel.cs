@@ -1,4 +1,4 @@
-namespace BechaKenaWeb.Models
+namespace BechaKena.Model.Models
 {
     public class ErrorViewModel
     {

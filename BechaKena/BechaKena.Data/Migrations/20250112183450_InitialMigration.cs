@@ -3,10 +3,10 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace BechaKena.Migrations
+namespace BechaKena.Data.Migrations
 {
     /// <inheritdoc />
-    public partial class AddCategoryToDb : Migration
+    public partial class InitialMigration : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)

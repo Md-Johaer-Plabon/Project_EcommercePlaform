@@ -1,4 +1,4 @@
-using BechaKenaWeb.Data;
+using BechaKena.Data.Data;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
