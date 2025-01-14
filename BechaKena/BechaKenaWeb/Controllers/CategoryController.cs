@@ -3,6 +3,7 @@ using BechaKena.Data.Repository;
 using BechaKena.Model.Models;
 using Microsoft.AspNetCore.Mvc;
 using System.Linq;
+using System.Security.Cryptography;
 
 namespace BechaKena.Controllers
 {
@@ -49,9 +50,7 @@ namespace BechaKena.Controllers
 			{
 				return NotFound();
 			}
-			//var categoryFromDb = _db.Categories.Find(id);
 			var categoryFromDbFirst = _db.GetFirstOrDefault(u=>u.Id==id);
-			//var categoryFromDbSingle = _db.Categories.SingleOrDefault(u => u.Id == id);
 			if (categoryFromDbFirst == null)
 			{
 				return NotFound();
@@ -95,26 +94,25 @@ namespace BechaKena.Controllers
 
 		[HttpPost]
 		[ValidateAntiForgeryToken]
-		public IActionResult DeletePOST(int? id)
-		{
-			if (id == null)
-			{
-				return NotFound();
-			}
-
-            //var field = _db.Categories.Find(obj.Id);
-            var categoryFromDbFirst = _db.GetFirstOrDefault(u => u.Id == id);
-            if (categoryFromDbFirst == null)
+        public IActionResult Delete(Category obj)
+        {
+            if (obj == null)
             {
                 return NotFound();
             }
 
-            _db.Remove(categoryFromDbFirst);
+            var field = _db.GetFirstOrDefault(u => u.Id == obj.Id);
+            if (field == null)
+            {
+                return NotFound();
+            }
+
+            _db.Remove(field);
             _db.Save();
 
-			TempData["Success"] = "Category Deleted Successfully!";
+            TempData["Success"] = "Category Deleted Successfully!";
 
-			return RedirectToAction("Index");
+            return RedirectToAction("Index");
         }
-	}
+    }
 }
