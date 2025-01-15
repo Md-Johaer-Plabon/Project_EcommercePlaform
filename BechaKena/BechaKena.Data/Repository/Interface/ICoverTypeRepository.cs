@@ -5,11 +5,10 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace BechaKena.Data.Repository
+namespace BechaKena.Data.Repository.Interface
 {
-    public interface ICategoryRepository : IRepository<Category>
+    public interface ICoverTypeRepository : IRepository<CoverType>
     {
-        void Update(Category obj);
-        void Save();
+        void Update(CoverType obj);
     }
 }

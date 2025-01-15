@@ -5,7 +5,7 @@ using System.Linq.Expressions;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace BechaKena.Data.Repository
+namespace BechaKena.Data.Repository.Interface
 {
     public interface IRepository<T> where T : class
     {

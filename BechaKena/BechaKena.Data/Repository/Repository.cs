@@ -1,4 +1,5 @@
 ﻿using BechaKena.Data.Data;
+using BechaKena.Data.Repository.Interface;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
