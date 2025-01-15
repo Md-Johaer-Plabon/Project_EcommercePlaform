@@ -1,6 +1,9 @@
 ﻿using BechaKena.Data.Repository.Interface;
 using BechaKena.Model.Models;
+using BechaKena.Model.ViewModels;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.Build.Tasks.Deployment.Bootstrapper;
 
 namespace BechaKena.Areas.Admin.Controllers
 {
@@ -8,34 +11,77 @@ namespace BechaKena.Areas.Admin.Controllers
     public class ProductController : Controller
     {
         private readonly IRepositoryWrapper _db;
-        public ProductController(IRepositoryWrapper db)
+		private readonly IWebHostEnvironment _hostEnvironment;
+		public ProductController(IRepositoryWrapper db, IWebHostEnvironment hostEnvironment)
         {
             _db = db;
-        }
+			_hostEnvironment = hostEnvironment;
+		}
         public IActionResult Index()
-        {
-            IEnumerable<CoverType> objCoverTypeList = _db.CoverType.GetAll();
-            return View(objCoverTypeList);
-        }
-        //GET
-        public IActionResult Create()
         {
             return View();
         }
+		//GET
+        public IActionResult Upsert(int? id)
+        {
+			ProductViewModel viewModel = new()
+			{
+				Product = new(),
+				CategoryList = _db.Category.GetAll().Select(i => new SelectListItem
+				{
+					Text = i.Name,
+					Value = i.Id.ToString()
+				}),
+				CoverTypeList = _db.CoverType.GetAll().Select(i => new SelectListItem
+				{
+					Text = i.Name,
+					Value = i.Id.ToString()
+				}),
+			};
+
+			if (id == null || id == 0)
+			{
+				//create product
+				//ViewBag.CategoryList = CategoryList;
+				//ViewData["CoverTypeList"] = CoverTypeList;
+				return View(viewModel);
+			}
+			else
+			{
+				//update product
+			}
+
+
+			return View(viewModel);
+		}
         //POST
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult Create(CoverType obj)
+        public IActionResult Upsert(ProductViewModel obj, IFormFile? file)
         {
+
             if (ModelState.IsValid)
             {
-                _db.CoverType.Add(obj);
-                _db.Save();
-                TempData["success"] = "CoverType created successfully";
-                return RedirectToAction("Index");
-            }
+				string wwwRootPath = _hostEnvironment.WebRootPath;
+				if (file != null)
+				{
+					string fileName = Guid.NewGuid().ToString();
+					var uploads = Path.Combine(wwwRootPath, @"images\products");
+					var extension = Path.GetExtension(file.FileName);
+					using (var fileStreams = new FileStream(Path.Combine(uploads, fileName + extension), FileMode.Create))
+					{
+						file.CopyTo(fileStreams);
+					}
+					obj.Product.ImageUrl = @"\images\products\" + fileName + extension;
+				}
+				_db.Product.Add(obj.Product);
+				_db.Save();
+				TempData["success"] = "Product created successfully";
+				return RedirectToAction("Index");
+			}
             return View(obj);
         }
+
         //GET
         public IActionResult Edit(int? id)
         {
@@ -92,7 +138,15 @@ namespace BechaKena.Areas.Admin.Controllers
             _db.Save();
             TempData["success"] = "CoverType deleted successfully";
             return RedirectToAction("Index");
-
         }
-    }
+
+		#region API CALLS
+		[HttpGet]
+		public IActionResult GetAll()
+		{
+			var productList = _db.Product.GetAll();
+			return Json(new { data = productList });
+		}
+		#endregion
+	}
 }
