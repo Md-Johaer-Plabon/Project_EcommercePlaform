@@ -144,8 +144,10 @@ namespace BechaKena.Areas.Admin.Controllers
 		[HttpGet]
 		public IActionResult GetAll()
 		{
-			var productList = _db.Product.GetAll();
-			return Json(new { data = productList });
+			var productList = _db.Product.GetAll(includeProperties: "Category,CoverType");
+			JsonResult res =  Json(new { data = productList });
+
+            return res;
 		}
 		#endregion
 	}
