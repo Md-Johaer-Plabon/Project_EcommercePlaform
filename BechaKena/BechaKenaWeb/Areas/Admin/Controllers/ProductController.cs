@@ -48,11 +48,14 @@ namespace BechaKena.Areas.Admin.Controllers
 			}
 			else
 			{
-				//update product
-			}
+                //update product
+                viewModel.Product = _db.Product.GetFirstOrDefault(u => u.Id == id);
+                return View(viewModel);
+
+            }
 
 
-			return View(viewModel);
+            return View(viewModel);
 		}
         //POST
         [HttpPost]
@@ -68,13 +71,33 @@ namespace BechaKena.Areas.Admin.Controllers
 					string fileName = Guid.NewGuid().ToString();
 					var uploads = Path.Combine(wwwRootPath, @"images\products");
 					var extension = Path.GetExtension(file.FileName);
-					using (var fileStreams = new FileStream(Path.Combine(uploads, fileName + extension), FileMode.Create))
+
+                    if (obj.Product.ImageUrl != null)
+                    {
+                        var oldImagePath = Path.Combine(wwwRootPath, obj.Product.ImageUrl.TrimStart('\\'));
+                        if (System.IO.File.Exists(oldImagePath))
+                        {
+                            System.IO.File.Delete(oldImagePath);
+                        }
+                    }
+
+                    using (var fileStreams = new FileStream(Path.Combine(uploads, fileName + extension), FileMode.Create))
 					{
 						file.CopyTo(fileStreams);
 					}
 					obj.Product.ImageUrl = @"\images\products\" + fileName + extension;
 				}
-				_db.Product.Add(obj.Product);
+
+                if (obj.Product.Id == 0)
+                {
+                    _db.Product.Add(obj.Product);
+                }
+                else
+                {
+                    _db.Product.Update(obj.Product);
+                }
+
+                _db.Product.Add(obj.Product);
 				_db.Save();
 				TempData["success"] = "Product created successfully";
 				return RedirectToAction("Index");
@@ -111,34 +134,26 @@ namespace BechaKena.Areas.Admin.Controllers
             }
             return View(obj);
         }
+
+        //POST
+        [HttpDelete]
         public IActionResult Delete(int? id)
         {
-            if (id == null || id == 0)
+			var obj = _db.Product.GetFirstOrDefault(u => u.Id == id);
+			if (obj == null)
             {
-                return NotFound();
-            }
-            var CoverTypeFrom_dbFirst = _db.CoverType.GetFirstOrDefault(u => u.Id == id);
-            if (CoverTypeFrom_dbFirst == null)
-            {
-                return NotFound();
-            }
-            return View(CoverTypeFrom_dbFirst);
-        }
-        //POST
-        [HttpPost, ActionName("Delete")]
-        [ValidateAntiForgeryToken]
-        public IActionResult DeletePOST(int? id)
-        {
-            var obj = _db.CoverType.GetFirstOrDefault(u => u.Id == id);
-            if (obj == null)
-            {
-                return NotFound();
-            }
-            _db.CoverType.Remove(obj);
-            _db.Save();
-            TempData["success"] = "CoverType deleted successfully";
-            return RedirectToAction("Index");
-        }
+				return Json(new { success = false, message = "Error while deleting" });
+			}
+			var oldImagePath = Path.Combine(_hostEnvironment.WebRootPath, obj.ImageUrl.TrimStart('\\'));
+			if (System.IO.File.Exists(oldImagePath))
+			{
+				System.IO.File.Delete(oldImagePath);
+			}
+
+			_db.Product.Remove(obj);
+			_db.Save();
+			return Json(new { success = true, message = "Delete Successful" });
+		}
 
 		#region API CALLS
 		[HttpGet]
