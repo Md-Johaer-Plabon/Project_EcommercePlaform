@@ -7,13 +7,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Remove="Areas\Identity\Pages\**" />
-    <Content Remove="Areas\Identity\Pages\**" />
-    <EmbeddedResource Remove="Areas\Identity\Pages\**" />
-    <None Remove="Areas\Identity\Pages\**" />
-  </ItemGroup>
-
-  <ItemGroup>
 	<PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="6.0.0" />
     <PackageReference Include="Microsoft.AspNetCore.Identity.UI" Version="6.0.0" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc.Razor.RuntimeCompilation" Version="6.0.0" />
@@ -30,6 +23,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\BechaKena.Data\BechaKena.Data.csproj" />
+    <ProjectReference Include="..\BechaKena.Utility\BechaKena.Utility.csproj" />
   </ItemGroup>
 
   <ItemGroup>
