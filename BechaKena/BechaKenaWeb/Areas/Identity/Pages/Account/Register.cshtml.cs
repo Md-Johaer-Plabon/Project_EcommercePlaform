@@ -8,6 +8,7 @@ using System.Text;
 using System.Text.Encodings.Web;
 using System.Threading;
 using System.Threading.Tasks;
+using BechaKena.Data.Repository.Interface;
 using BechaKena.Model.Models;
 using BechaKena.Utility;
 using Microsoft.AspNetCore.Authentication;
@@ -15,7 +16,9 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Logging;
 
@@ -30,6 +33,7 @@ namespace BulkyBookWeb.Areas.Identity.Pages.Account
         private readonly ILogger<RegisterModel> _logger;
         private readonly IEmailSender _emailSender;
 		private readonly RoleManager<IdentityRole> _roleManager;
+        private readonly IRepositoryWrapper _db;
 
 		public RegisterModel(
             UserManager<IdentityUser> userManager,
@@ -37,8 +41,10 @@ namespace BulkyBookWeb.Areas.Identity.Pages.Account
             SignInManager<IdentityUser> signInManager,
             ILogger<RegisterModel> logger,
             IEmailSender emailSender,
-			RoleManager<IdentityRole> roleManager)
+			RoleManager<IdentityRole> roleManager,
+            IRepositoryWrapper db)
         {
+            _db = db;
 			_roleManager = roleManager;
 			_userManager = userManager;
             _userStore = userStore;
@@ -108,6 +114,12 @@ namespace BulkyBookWeb.Areas.Identity.Pages.Account
 			public string? State { get; set; }
 			public string? PostalCode { get; set; }
 			public string? PhoneNumber { get; set; }
+			public string? Role { get; set; }
+			[ValidateNever]
+			public IEnumerable<SelectListItem> RoleList { get; set; }
+			public int? CompanyId { get; set; }
+			[ValidateNever]
+			public IEnumerable<SelectListItem> CompanyList { get; set; }
 		}
 
 
@@ -123,7 +135,22 @@ namespace BulkyBookWeb.Areas.Identity.Pages.Account
 
 			ReturnUrl = returnUrl;
             ExternalLogins = (await _signInManager.GetExternalAuthenticationSchemesAsync()).ToList();
-        }
+
+			Input = new InputModel()
+			{
+				RoleList = _roleManager.Roles.Select(x => x.Name).Select(i => new SelectListItem
+				{
+					Text = i,
+					Value = i
+				}),
+
+				CompanyList = _db.Company.GetAll().Select(i => new SelectListItem
+				{
+					Text = i.Name,
+					Value = i.Id.ToString()
+				}),
+			};
+		}
 
         public async Task<IActionResult> OnPostAsync(string? returnUrl = null)
         {
@@ -143,13 +170,27 @@ namespace BulkyBookWeb.Areas.Identity.Pages.Account
 				user.Name = Input.Name;
 				user.PhoneNumber = Input.PhoneNumber;
 
+                if (Input.Role == SharedDetails.Role_User_Comp)
+                {
+                    user.CompanyId = Input.CompanyId;
+                }
+
 				var result = await _userManager.CreateAsync(user, Input.Password);
 
                 if (result.Succeeded)
                 {
                     _logger.LogInformation("User created a new account with password.");
 
-                    var userId = await _userManager.GetUserIdAsync(user);
+					if (Input.Role == null)
+					{
+						await _userManager.AddToRoleAsync(user, SharedDetails.Role_User_Indi);
+					}
+					else
+					{
+						await _userManager.AddToRoleAsync(user, Input.Role);
+					}
+
+					var userId = await _userManager.GetUserIdAsync(user);
                     var code = await _userManager.GenerateEmailConfirmationTokenAsync(user);
                     code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
                     var callbackUrl = Url.Page(
