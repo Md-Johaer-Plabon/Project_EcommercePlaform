@@ -33,8 +33,21 @@ namespace BechaKena.Data.Repository
                     query = query.Include(includeProp);
                 }
             }
-            return query.ToList();
+
+            List<T> result;
+            try
+            {
+				result = query.ToList();
+
+			}
+            catch
+            {
+                result = new List<T>();
+            }
+
+            return result;
         }
+
         public T GetFirstOrDefault(Expression<Func<T, bool>> filter, string? includeProperties = null)
         {
             IQueryable<T> query = dbSet;
