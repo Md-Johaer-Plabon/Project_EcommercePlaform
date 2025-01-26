@@ -9,5 +9,7 @@ namespace BechaKena.Data.Repository.Interface
 {
 	public interface IShoppingCartRepository : IRepository<ShoppingCart>
 	{
+		int IncrementContents(ShoppingCart shoppingCart, int count);
+		int DecrementContents(ShoppingCart shoppingCart, int count);
 	}
 }

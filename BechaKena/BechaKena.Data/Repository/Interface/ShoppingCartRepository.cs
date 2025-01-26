@@ -16,5 +16,17 @@ namespace BechaKena.Data.Repository.Interface
 		{
 			_db = db;
 		}
+
+		public int DecrementContents(ShoppingCart shoppingCart, int count)
+		{
+			shoppingCart.Count -= count;
+			return shoppingCart.Count;
+		}
+
+		public int IncrementContents(ShoppingCart shoppingCart, int count)
+		{
+			shoppingCart.Count += count;
+			return shoppingCart.Count;
+		}
 	}
 }

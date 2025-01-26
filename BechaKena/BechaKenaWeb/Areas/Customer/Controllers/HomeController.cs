@@ -1,7 +1,9 @@
 ﻿using BechaKena.Data.Repository.Interface;
 using BechaKena.Model.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Diagnostics;
+using System.Security.Claims;
 
 namespace BechaKena.Areas.Customer.Controllers
 {
@@ -34,14 +36,41 @@ namespace BechaKena.Areas.Customer.Controllers
             return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
         }
 
-		public IActionResult Details(int id)
+		public IActionResult Details(int productId)
 		{
 			ShoppingCart cartObj = new()
 			{
 				Count = 1,
-				Product = _db.Product.GetFirstOrDefault(u => u.Id == id, includeProperties: "Category,CoverType"),
+				ProductId = productId,
+				Product = _db.Product.GetFirstOrDefault(u => u.Id == productId, includeProperties: "Category,CoverType"),
 			};
 			return View(cartObj);
+		}
+
+		[HttpPost]
+		[ValidateAntiForgeryToken]
+		[Authorize]
+		public IActionResult Details(ShoppingCart shoppingCart)
+		{
+			var claimsIdentity = (ClaimsIdentity)User.Identity;
+			var claim = claimsIdentity.FindFirst(ClaimTypes.NameIdentifier);
+			shoppingCart.ApplicationUserId = claim.Value;
+
+			ShoppingCart cartFromDb = _db.ShoppingCart.GetFirstOrDefault(
+				u => u.ApplicationUserId == claim.Value && u.ProductId == shoppingCart.ProductId);
+
+
+			if (cartFromDb == null)
+			{
+				_db.ShoppingCart.Add(shoppingCart);
+			}
+			else
+			{
+				_db.ShoppingCart.IncrementContents(cartFromDb, shoppingCart.Count);
+			}
+			_db.Save();
+
+			return RedirectToAction(nameof(Index));
 		}
 
 	}
