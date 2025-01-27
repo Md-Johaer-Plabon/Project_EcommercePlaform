@@ -1,5 +1,7 @@
 ﻿using BechaKena.Data.Repository.Interface;
+using BechaKena.Model.Models;
 using BechaKena.Model.ViewModels;
+using BechaKena.Utility;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
@@ -11,6 +13,8 @@ namespace BechaKena.Areas.Customer.Controllers
 	public class CartController : Controller
 	{
 		private readonly IRepositoryWrapper _db;
+
+		[BindProperty]
 		public ShoppingCartVM ShoppingCartVM { get; set; }
 		public CartController(IRepositoryWrapper db)
 		{
@@ -69,6 +73,44 @@ namespace BechaKena.Areas.Customer.Controllers
 				ShoppingCartVM.OrderHeader.OrderTotal += (cart.Price * cart.Count);
 			}
 			return View(ShoppingCartVM);
+		}
+
+		[HttpPost]
+		[ActionName("Summary")]
+		[ValidateAntiForgeryToken]
+		public IActionResult SummaryPOST()
+		{
+			var claimsIdentity = (ClaimsIdentity)User.Identity;
+			var claim = claimsIdentity.FindFirst(ClaimTypes.NameIdentifier);
+			ShoppingCartVM.ListCart = _db.ShoppingCart.GetAll(u => u.ApplicationUserId == claim.Value,
+				includeProperties: "Product");
+			ShoppingCartVM.OrderHeader.PaymentStatus = SharedDetails.PaymentStatusPending;
+			ShoppingCartVM.OrderHeader.OrderStatus = SharedDetails.StatusPending;
+			ShoppingCartVM.OrderHeader.OrderDate = System.DateTime.Now;
+			ShoppingCartVM.OrderHeader.ApplicationUserId = claim.Value;
+			foreach (var cart in ShoppingCartVM.ListCart)
+			{
+				cart.Price = GetPriceBasedOnQuantity(cart.Count, cart.Product.Price,
+					cart.Product.Price50, cart.Product.Price100);
+				ShoppingCartVM.OrderHeader.OrderTotal += (cart.Price * cart.Count);
+			}
+			_db.OrderHeader.Add(ShoppingCartVM.OrderHeader);
+			_db.Save();
+			foreach (var cart in ShoppingCartVM.ListCart)
+			{
+				OrderDetail orderDetail = new()
+				{
+					ProductId = cart.ProductId,
+					OrderId = ShoppingCartVM.OrderHeader.Id,
+					Price = cart.Price,
+					Count = cart.Count
+				};
+				_db.OrderDetail.Add(orderDetail);
+				_db.Save();
+			}
+			_db.ShoppingCart.RemoveRange(ShoppingCartVM.ListCart);
+			_db.Save();
+			return RedirectToAction("Index", "Home");
 		}
 
 		private double GetPriceBasedOnQuantity(double quantity, double price, double price50, double price100)
