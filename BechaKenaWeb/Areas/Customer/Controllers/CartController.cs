@@ -224,11 +224,11 @@ namespace BechaKena.Areas.Customer.Controllers
 			return RedirectToAction(nameof(Index));
 		}
 
-		public IActionResult OrderConfirmation(int id)
-		{
-			OrderHeader orderHeader = _db.OrderHeader.GetFirstOrDefault(u => u.Id == id);
-			//check the stripe status
-		}
+		//public IActionResult OrderConfirmation(int id)
+		//{
+		//	OrderHeader orderHeader = _db.OrderHeader.GetFirstOrDefault(u => u.Id == id);
+		//	//check the stripe status
+		//}
 
 	}
 }
