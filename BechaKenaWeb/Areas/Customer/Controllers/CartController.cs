@@ -83,18 +83,34 @@ namespace BechaKena.Areas.Customer.Controllers
 		{
 			var claimsIdentity = (ClaimsIdentity)User.Identity;
 			var claim = claimsIdentity.FindFirst(ClaimTypes.NameIdentifier);
+
 			ShoppingCartVM.ListCart = _db.ShoppingCart.GetAll(u => u.ApplicationUserId == claim.Value,
 				includeProperties: "Product");
-			ShoppingCartVM.OrderHeader.PaymentStatus = SharedDetails.PaymentStatusPending;
-			ShoppingCartVM.OrderHeader.OrderStatus = SharedDetails.StatusPending;
+
+
 			ShoppingCartVM.OrderHeader.OrderDate = System.DateTime.Now;
 			ShoppingCartVM.OrderHeader.ApplicationUserId = claim.Value;
+
+
 			foreach (var cart in ShoppingCartVM.ListCart)
 			{
 				cart.Price = GetPriceBasedOnQuantity(cart.Count, cart.Product.Price,
 					cart.Product.Price50, cart.Product.Price100);
 				ShoppingCartVM.OrderHeader.OrderTotal += (cart.Price * cart.Count);
 			}
+			ApplicationUser applicationUser = _db.ApplicationUser.GetFirstOrDefault(u => u.Id == claim.Value);
+
+			if (applicationUser.CompanyId.GetValueOrDefault() == 0)
+			{
+				ShoppingCartVM.OrderHeader.PaymentStatus = SharedDetails.PaymentStatusPending;
+				ShoppingCartVM.OrderHeader.OrderStatus = SharedDetails.StatusPending;
+			}
+			else
+			{
+				ShoppingCartVM.OrderHeader.PaymentStatus = SharedDetails.PaymentStatusDelayedPayment;
+				ShoppingCartVM.OrderHeader.OrderStatus = SharedDetails.StatusApproved;
+			}
+
 			_db.OrderHeader.Add(ShoppingCartVM.OrderHeader);
 			_db.Save();
 			foreach (var cart in ShoppingCartVM.ListCart)
@@ -109,46 +125,57 @@ namespace BechaKena.Areas.Customer.Controllers
 				_db.OrderDetail.Add(orderDetail);
 				_db.Save();
 			}
-			//_db.ShoppingCart.RemoveRange(ShoppingCartVM.ListCart);
-			//_db.Save();
-			//return RedirectToAction("Index", "Home");
-			var domain = "https://localhost:50001/";
-			var options = new SessionCreateOptions
+
+
+			if (applicationUser.CompanyId.GetValueOrDefault() == 0)
 			{
-				PaymentMethodTypes = new List<string>
+				//stripe settings 
+				var domain = "https://localhost:50001/";
+				var options = new SessionCreateOptions
+				{
+					PaymentMethodTypes = new List<string>
 				{
 				  "card",
 				},
-				LineItems = new List<SessionLineItemOptions>(),
-				Mode = "payment",
-				SuccessUrl = domain + $"customer/cart/OrderConfirmation?id={ShoppingCartVM.OrderHeader.Id}",
-				CancelUrl = domain + $"customer/cart/index",
-			};
-			foreach (var item in ShoppingCartVM.ListCart)
-			{
-				var sessionLineItem = new SessionLineItemOptions
-				{
-					PriceData = new SessionLineItemPriceDataOptions
-					{
-						UnitAmount = (long)(item.Price * 100),//20.00 -> 2000
-						Currency = "usd",
-						ProductData = new SessionLineItemPriceDataProductDataOptions
-						{
-							Name = item.Product.Title
-						},
-					},
-					Quantity = item.Count,
+					LineItems = new List<SessionLineItemOptions>(),
+					Mode = "payment",
+					SuccessUrl = domain + $"customer/cart/OrderConfirmation?id={ShoppingCartVM.OrderHeader.Id}",
+					CancelUrl = domain + $"customer/cart/index",
 				};
-				options.LineItems.Add(sessionLineItem);
 
+				foreach (var item in ShoppingCartVM.ListCart)
+				{
+
+					var sessionLineItem = new SessionLineItemOptions
+					{
+						PriceData = new SessionLineItemPriceDataOptions
+						{
+							UnitAmount = (long)(item.Price * 100),//20.00 -> 2000
+							Currency = "uSharedDetails",
+							ProductData = new SessionLineItemPriceDataProductDataOptions
+							{
+								Name = item.Product.Title
+							},
+
+						},
+						Quantity = item.Count,
+					};
+					options.LineItems.Add(sessionLineItem);
+
+				}
+
+				var service = new SessionService();
+				Session session = service.Create(options);
+				_db.OrderHeader.UpdateStripePaymentID(ShoppingCartVM.OrderHeader.Id, session.Id, session.PaymentIntentId);
+				_db.Save();
+				Response.Headers.Add("Location", session.Url);
+				return new StatusCodeResult(303);
 			}
-			var service = new SessionService(); 
-			_db.OrderHeader.UpdateStripePaymentID(ShoppingCartVM.OrderHeader.Id, session.Id, session.PaymentIntentId);
-			_db.Save();
-			Session session = service.Create(options);
-			Response.Headers.Add("Location", session.Url);
-			return new StatusCodeResult(303);
 
+			else
+			{
+				return RedirectToAction("OrderConfirmation", "Cart", new { id = ShoppingCartVM.OrderHeader.Id });
+			}
 		}
 
 		private double GetPriceBasedOnQuantity(double quantity, double price, double price50, double price100)
