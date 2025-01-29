@@ -1,6 +1,8 @@
 ﻿using BechaKena.Data.Data;
 using BechaKena.Data.Repository.Interface;
 using BechaKena.Model.Models;
+using BechaKena.Utility;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Linq;
 using System.Security.Cryptography;
@@ -8,7 +10,8 @@ using System.Security.Cryptography;
 namespace BechaKena.Areas.Admin.Controllers
 {
     [Area("Admin")]
-    public class CategoryController : Controller
+	[Authorize(Roles = SharedDetails.Role_Admin)]
+	public class CategoryController : Controller
     {
         private readonly IRepositoryWrapper _db;
         public CategoryController(IRepositoryWrapper db)

@@ -1,11 +1,14 @@
 ﻿using BechaKena.Data.Repository.Interface;
 using BechaKena.Model.Models;
+using BechaKena.Utility;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace BechaKena.Areas.Admin.Controllers
 {
     [Area("Admin")]
-    public class CoverTypeController : Controller
+	[Authorize(Roles = SharedDetails.Role_Admin)]
+	public class CoverTypeController : Controller
     {
         
         private readonly IRepositoryWrapper _wrapper;
