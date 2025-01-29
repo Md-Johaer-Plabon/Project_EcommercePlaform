@@ -56,22 +56,40 @@ namespace BechaKena.Data.Repository
             return result;
         }
 
-        public T GetFirstOrDefault(Expression<Func<T, bool>> filter, string? includeProperties = null)
-        {
-            IQueryable<T> query = dbSet;
-            query = query.Where(filter);
+		public T GetFirstOrDefault(Expression<Func<T, bool>> filter, string? includeProperties = null, bool tracked = true)
+		{
+			if (tracked)
+			{
+				IQueryable<T> query = dbSet;
 
-            if (includeProperties != null)
-            {
-                foreach (var includeProp in includeProperties.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries))
-                {
-                    query = query.Include(includeProp);
-                }
-            }
+				query = query.Where(filter);
+				if (includeProperties != null)
+				{
+					foreach (var includeProp in includeProperties.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries))
+					{
+						query = query.Include(includeProp);
+					}
+				}
+				return query.FirstOrDefault();
+			}
+			else
+			{
+				IQueryable<T> query = dbSet.AsNoTracking();
 
-            return query.FirstOrDefault();
-        }
-        public void Remove(T entity)
+				query = query.Where(filter);
+				if (includeProperties != null)
+				{
+					foreach (var includeProp in includeProperties.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries))
+					{
+						query = query.Include(includeProp);
+					}
+				}
+				return query.FirstOrDefault();
+			}
+
+		}
+
+		public void Remove(T entity)
         {
             dbSet.Remove(entity);
         }
