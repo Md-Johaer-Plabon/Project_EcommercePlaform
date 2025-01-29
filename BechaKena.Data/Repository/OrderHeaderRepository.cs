@@ -21,7 +21,9 @@ namespace BechaKena.Data.Repository
 		public void UpdateStripePaymentID(int id, string sessionId, string paymentItentId)
 		{
 			var orderFromDb = _db.OrderHeaders.FirstOrDefault(u => u.Id == id);
-			orderFromDb.SessionId = sessionId;
+
+            orderFromDb.PaymentDate = DateTime.Now;
+            orderFromDb.SessionId = sessionId;
 			orderFromDb.PaymentIntentId = paymentItentId;
 		}
 
